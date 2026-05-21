@@ -1,1 +1,15 @@
-# AurorNZ-paths-filter
+# AurorNZ/paths-filter
+
+Conditionally run actions based on files modified by PR, feature branch or pushed commits
+
+Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/AurorNZ/paths-filter](https://github.com/AurorNZ/paths-filter).
+
+## Versions
+
+| Version | Tag | Upstream commit |
+|---------|-----|-----------------|
+| v5.0.0 | [`v5.0.0`](https://github.com/chainguard-actions/AurorNZ-paths-filter/tree/v5.0.0) | — |
+
+## Privacy
+
+This Action contacts Chainguard's licensing server to verify authorization. Connection metadata (IP address, GitHub repository identifier, timestamp, and any metadata encoded in the auth token) is transmitted to Chainguard, Inc. even if authorization is denied in accordance with our [Privacy Notice](https://www.chainguard.dev/legal/privacy-notice)
