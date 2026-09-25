@@ -8,7 +8,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
-| v5.0.0 | [`v5.0.0`](https://github.com/chainguard-actions/AurorNZ-paths-filter/tree/v5.0.0) | — |
+| v5.0.0 | [`v5.0.0`](https://github.com/chainguard-actions/AurorNZ-paths-filter/tree/v5.0.0) | [`c9dd42e`](https://github.com/AurorNZ/paths-filter/commit/c9dd42e99db87803313ff6f4b1150cc9f6c836af) |
 
 ## Privacy
 
