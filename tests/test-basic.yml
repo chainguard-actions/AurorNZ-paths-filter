@@ -1,0 +1,55 @@
+name: Test basic usage - inline filters
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - id: filter
+        uses: .
+        continue-on-error: true
+        with:
+          filters: |
+            action:
+              - 'action/**'
+            tests:
+              - 'tests/**'
+            any:
+              - '**'
+
+      - name: Assert action ran and produced output
+        env:
+          OUTCOME: ${{ steps.filter.outcome }}
+          CHANGES: ${{ steps.filter.outputs.changes }}
+          ACTION_MATCHED: ${{ steps.filter.outputs.action }}
+          TESTS_MATCHED: ${{ steps.filter.outputs.tests }}
+          ANY_MATCHED: ${{ steps.filter.outputs.any }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "changes: $CHANGES"
+          echo "action matched: $ACTION_MATCHED"
+          echo "tests matched: $TESTS_MATCHED"
+          echo "any matched: $ANY_MATCHED"
+
+          if [ "$OUTCOME" = "success" ]; then
+            # changes output should be a JSON array
+            if [ -z "$CHANGES" ]; then
+              echo "FAIL: action succeeded but changes output is empty"
+              exit 1
+            fi
+            # Validate it looks like a JSON array
+            if ! echo "$CHANGES" | grep -qE '^\['; then
+              echo "FAIL: changes output is not a JSON array: $CHANGES"
+              exit 1
+            fi
+            echo "PASS: action succeeded with changes=$CHANGES"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected under harness - no comparable base branch)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

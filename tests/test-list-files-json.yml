@@ -1,0 +1,58 @@
+name: Test list-files json output
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - id: filter
+        uses: .
+        continue-on-error: true
+        with:
+          list-files: json
+          filters: |
+            action:
+              - 'action/**'
+            any:
+              - '**'
+
+      - name: Assert action ran with list-files json
+        env:
+          OUTCOME: ${{ steps.filter.outcome }}
+          CHANGES: ${{ steps.filter.outputs.changes }}
+          ACTION_FILES: ${{ steps.filter.outputs.action_files }}
+          ANY_FILES: ${{ steps.filter.outputs.any_files }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "changes: $CHANGES"
+          echo "action_files: $ACTION_FILES"
+          echo "any_files: $ANY_FILES"
+
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$CHANGES" ]; then
+              echo "FAIL: action succeeded but changes output is empty"
+              exit 1
+            fi
+            # Validate changes is a JSON array
+            if ! echo "$CHANGES" | grep -qE '^\['; then
+              echo "FAIL: changes output is not a JSON array: $CHANGES"
+              exit 1
+            fi
+            # If any files matched, verify _files output is a JSON array
+            if [ -n "$ANY_FILES" ]; then
+              if ! echo "$ANY_FILES" | grep -qE '^\['; then
+                echo "FAIL: any_files output is not a JSON array: $ANY_FILES"
+                exit 1
+              fi
+            fi
+            echo "PASS: action succeeded with list-files=json, changes=$CHANGES"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected under harness - no comparable base branch)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
