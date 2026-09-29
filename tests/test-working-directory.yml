@@ -1,0 +1,31 @@
+name: Test working-directory input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          path: myrepo
+      - id: action
+        uses: .
+        with:
+          working-directory: myrepo
+          filters: |
+            src:
+              - '**/*.yml'
+              - '**/*.yaml'
+            docs:
+              - '**/*.md'
+      - name: Assert changes output is set
+        env:
+          CHANGES: ${{ steps.action.outputs.changes }}
+        run: |
+          echo "changes: $CHANGES"
+          if [ -z "$CHANGES" ]; then
+            echo "FAIL: expected changes output to be set (even if empty array)"
+            exit 1
+          fi
+          echo "PASS: changes output is '$CHANGES'"

@@ -1,0 +1,78 @@
+name: Test list-files csv format
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Configure git and create staged files to detect
+        run: |
+          git config user.email "test@example.com"
+          git config user.name "Test User"
+          mkdir -p tmp-csv-test
+          echo "file one" > tmp-csv-test/file1.txt
+          echo "file two" > tmp-csv-test/file2.txt
+          # Stage the files so they appear in git diff HEAD
+          git add tmp-csv-test/file1.txt tmp-csv-test/file2.txt
+
+      - id: filter
+        uses: .
+        with:
+          base: HEAD
+          list-files: csv
+          filters: |
+            csvfiles:
+              - 'tmp-csv-test/**'
+
+      - name: Assert csv output contains the files
+        env:
+          CHANGES: ${{ steps.filter.outputs.changes }}
+          CSVFILES: ${{ steps.filter.outputs.csvfiles }}
+          CSVFILES_COUNT: ${{ steps.filter.outputs.csvfiles_count }}
+          CSVFILES_FILES: ${{ steps.filter.outputs.csvfiles_files }}
+        run: |
+          echo "changes: $CHANGES"
+          echo "csvfiles: $CSVFILES"
+          echo "csvfiles_count: $CSVFILES_COUNT"
+          echo "csvfiles_files: $CSVFILES_FILES"
+
+          # csvfiles filter should have matched
+          if [ "$CSVFILES" != "true" ]; then
+            echo "FAIL: expected csvfiles=true, got: $CSVFILES"
+            exit 1
+          fi
+          echo "PASS: csvfiles=true"
+
+          # csvfiles_count should be 2
+          if [ "$CSVFILES_COUNT" != "2" ]; then
+            echo "FAIL: expected csvfiles_count=2, got: $CSVFILES_COUNT"
+            exit 1
+          fi
+          echo "PASS: csvfiles_count=2"
+
+          # csvfiles_files should be a non-empty CSV string containing both files
+          if [ -z "$CSVFILES_FILES" ]; then
+            echo "FAIL: csvfiles_files is empty"
+            exit 1
+          fi
+          echo "PASS: csvfiles_files is non-empty: $CSVFILES_FILES"
+
+          # Should contain file1.txt and file2.txt
+          if ! echo "$CSVFILES_FILES" | grep -q "file1.txt"; then
+            echo "FAIL: csvfiles_files does not contain file1.txt: $CSVFILES_FILES"
+            exit 1
+          fi
+          if ! echo "$CSVFILES_FILES" | grep -q "file2.txt"; then
+            echo "FAIL: csvfiles_files does not contain file2.txt: $CSVFILES_FILES"
+            exit 1
+          fi
+          echo "PASS: csvfiles_files contains both expected files"
+
+          # changes should include 'csvfiles'
+          if ! echo "$CHANGES" | python3 -c "import sys, json; v = json.load(sys.stdin); assert 'csvfiles' in v" 2>/dev/null; then
+            echo "FAIL: changes should contain 'csvfiles': $CHANGES"
+            exit 1
+          fi
+          echo "PASS: changes contains csvfiles"

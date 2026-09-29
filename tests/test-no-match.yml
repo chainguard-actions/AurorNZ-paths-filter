@@ -1,0 +1,62 @@
+name: Test no-match - filters that match nothing
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Configure git
+        run: |
+          git config user.email "test@example.com"
+          git config user.name "Test User"
+
+      - id: filter
+        uses: .
+        with:
+          # base: HEAD with clean checkout means no uncommitted changes
+          base: HEAD
+          filters: |
+            nonexistent:
+              - 'this/path/does/not/exist/**'
+            alsonothere:
+              - '*.xyz'
+              - 'imaginary/**/*.abc'
+
+      - name: Assert no filters matched
+        env:
+          CHANGES: ${{ steps.filter.outputs.changes }}
+          NONEXISTENT: ${{ steps.filter.outputs.nonexistent }}
+          ALSONOTHERE: ${{ steps.filter.outputs.alsonothere }}
+        run: |
+          echo "changes: $CHANGES"
+          echo "nonexistent: $NONEXISTENT"
+          echo "alsonothere: $ALSONOTHERE"
+
+          # changes must be a valid JSON array
+          if ! echo "$CHANGES" | python3 -c "import sys, json; v = json.load(sys.stdin); assert isinstance(v, list)" 2>/dev/null; then
+            echo "FAIL: 'changes' is not a valid JSON array: $CHANGES"
+            exit 1
+          fi
+          echo "PASS: changes is a valid JSON array"
+
+          # changes should be empty since no files changed
+          if ! echo "$CHANGES" | python3 -c "import sys, json; v = json.load(sys.stdin); assert len(v) == 0" 2>/dev/null; then
+            echo "FAIL: expected empty changes array, got: $CHANGES"
+            exit 1
+          fi
+          echo "PASS: changes is empty as expected"
+
+          # All filters should be false
+          if [ "$NONEXISTENT" != "false" ]; then
+            echo "FAIL: expected nonexistent=false, got: $NONEXISTENT"
+            exit 1
+          fi
+          echo "PASS: nonexistent=false"
+
+          if [ "$ALSONOTHERE" != "false" ]; then
+            echo "FAIL: expected alsonothere=false, got: $ALSONOTHERE"
+            exit 1
+          fi
+          echo "PASS: alsonothere=false"

@@ -1,0 +1,78 @@
+name: Test list-files output with uncommitted changes
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Configure git and create a staged file to detect
+        run: |
+          git config user.email "test@example.com"
+          git config user.name "Test User"
+          mkdir -p tmp-test-dir
+          echo "test content" > tmp-test-dir/sample.txt
+          # Stage the file so it appears in git diff HEAD
+          git add tmp-test-dir/sample.txt
+
+      - id: filter
+        uses: .
+        with:
+          # base: HEAD detects uncommitted (staged + unstaged) changes
+          base: HEAD
+          list-files: json
+          filters: |
+            testfiles:
+              - 'tmp-test-dir/**'
+            other:
+              - 'nonexistent-path/**'
+
+      - name: Assert testfiles filter matched the new file
+        env:
+          CHANGES: ${{ steps.filter.outputs.changes }}
+          TESTFILES: ${{ steps.filter.outputs.testfiles }}
+          TESTFILES_COUNT: ${{ steps.filter.outputs.testfiles_count }}
+          TESTFILES_FILES: ${{ steps.filter.outputs.testfiles_files }}
+          OTHER: ${{ steps.filter.outputs.other }}
+        run: |
+          echo "changes: $CHANGES"
+          echo "testfiles: $TESTFILES"
+          echo "testfiles_count: $TESTFILES_COUNT"
+          echo "testfiles_files: $TESTFILES_FILES"
+          echo "other: $OTHER"
+
+          # testfiles filter should have matched
+          if [ "$TESTFILES" != "true" ]; then
+            echo "FAIL: expected testfiles=true, got: $TESTFILES"
+            exit 1
+          fi
+          echo "PASS: testfiles=true"
+
+          # testfiles_count should be 1
+          if [ "$TESTFILES_COUNT" != "1" ]; then
+            echo "FAIL: expected testfiles_count=1, got: $TESTFILES_COUNT"
+            exit 1
+          fi
+          echo "PASS: testfiles_count=1"
+
+          # testfiles_files should be a JSON array containing the file
+          if ! echo "$TESTFILES_FILES" | python3 -c "import sys, json; v = json.load(sys.stdin); assert isinstance(v, list) and len(v) > 0" 2>/dev/null; then
+            echo "FAIL: testfiles_files is not a non-empty JSON array: $TESTFILES_FILES"
+            exit 1
+          fi
+          echo "PASS: testfiles_files is a non-empty JSON array"
+
+          # other filter should not have matched
+          if [ "$OTHER" != "false" ]; then
+            echo "FAIL: expected other=false, got: $OTHER"
+            exit 1
+          fi
+          echo "PASS: other=false"
+
+          # changes should include 'testfiles' but not 'other'
+          if ! echo "$CHANGES" | python3 -c "import sys, json; v = json.load(sys.stdin); assert 'testfiles' in v and 'other' not in v" 2>/dev/null; then
+            echo "FAIL: changes should contain 'testfiles' but not 'other': $CHANGES"
+            exit 1
+          fi
+          echo "PASS: changes contains testfiles only"

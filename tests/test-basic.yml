@@ -1,0 +1,54 @@
+name: Test basic usage - no uncommitted changes
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Configure git
+        run: |
+          git config user.email "test@example.com"
+          git config user.name "Test User"
+
+      - id: filter
+        uses: .
+        with:
+          # base: HEAD compares working tree against HEAD — no uncommitted changes after a clean checkout
+          base: HEAD
+          filters: |
+            src:
+              - 'src/**'
+            docs:
+              - '*.md'
+
+      - name: Assert changes output is a valid JSON array
+        env:
+          CHANGES: ${{ steps.filter.outputs.changes }}
+          SRC: ${{ steps.filter.outputs.src }}
+          DOCS: ${{ steps.filter.outputs.docs }}
+        run: |
+          echo "changes: $CHANGES"
+          echo "src: $SRC"
+          echo "docs: $DOCS"
+
+          # changes must be a valid JSON array
+          if ! echo "$CHANGES" | python3 -c "import sys, json; v = json.load(sys.stdin); assert isinstance(v, list)" 2>/dev/null; then
+            echo "FAIL: 'changes' output is not a valid JSON array: $CHANGES"
+            exit 1
+          fi
+          echo "PASS: changes is a valid JSON array: $CHANGES"
+
+          # After a clean checkout with base: HEAD there should be no uncommitted changes
+          if [ "$SRC" != "false" ]; then
+            echo "FAIL: expected src=false (no uncommitted changes), got: $SRC"
+            exit 1
+          fi
+          echo "PASS: src=false as expected"
+
+          if [ "$DOCS" != "false" ]; then
+            echo "FAIL: expected docs=false (no uncommitted changes), got: $DOCS"
+            exit 1
+          fi
+          echo "PASS: docs=false as expected"
