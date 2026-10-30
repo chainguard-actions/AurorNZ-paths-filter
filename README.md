@@ -6,10 +6,10 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 ## Versions
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v5.0.0 | [`v5.0.0`](https://github.com/chainguard-actions/AurorNZ-paths-filter/tree/v5.0.0) | [`c9dd42e`](https://github.com/AurorNZ/paths-filter/commit/c9dd42e99db87803313ff6f4b1150cc9f6c836af) |
-| v5.1.0 | [`v5.1.0`](https://github.com/chainguard-actions/AurorNZ-paths-filter/tree/v5.1.0) | [`ead3777`](https://github.com/AurorNZ/paths-filter/commit/ead37777b84ca4c3301a92f453c4040b85287e76) |
+| Version | Tag | Upstream commit | Hardening report |
+|---------|-----|-----------------|------------------|
+| v5.0.0 | [`v5.0.0`](https://github.com/chainguard-actions/AurorNZ-paths-filter/tree/v5.0.0) | [`c9dd42e`](https://github.com/AurorNZ/paths-filter/commit/c9dd42e99db87803313ff6f4b1150cc9f6c836af) | [`HARDENING.md`](https://github.com/chainguard-actions/AurorNZ-paths-filter/blob/v5.0.0/HARDENING.md) |
+| v5.1.0 | [`v5.1.0`](https://github.com/chainguard-actions/AurorNZ-paths-filter/tree/v5.1.0) | [`ead3777`](https://github.com/AurorNZ/paths-filter/commit/ead37777b84ca4c3301a92f453c4040b85287e76) | [`HARDENING.md`](https://github.com/chainguard-actions/AurorNZ-paths-filter/blob/v5.1.0/HARDENING.md) |
 
 ## Privacy
 
